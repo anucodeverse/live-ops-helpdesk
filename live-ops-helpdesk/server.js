@@ -13,10 +13,13 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+const frontendUrl =
+    process.env.CLIENT_URL || "http://localhost:5500";
+
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5500",
-        methods: ["GET", "POST"],
+        origin: frontendUrl,
+        methods: ["GET", "POST", "PATCH"],
         credentials: true
     }
 });
@@ -24,9 +27,10 @@ const io = new Server(server, {
 initializeSocket(io);
 
 app.set("io", io);
+
 app.use(
     cors({
-        origin:"http://localhost:5500",
+        origin: frontendUrl,
         credentials: true
     })
 );
