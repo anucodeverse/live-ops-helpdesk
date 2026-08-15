@@ -2,287 +2,201 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Live Ops Socket Test</title>
+    <title>RapidDispatch Live Ops</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-        }
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
-        h1 {
-            margin-bottom: 10px;
-        }
-
-        #connectionStatus {
-            padding: 12px;
-            background: #eee;
-            border-radius: 6px;
-        }
-
-        button {
-            padding: 10px 15px;
-            margin: 5px;
-            cursor: pointer;
-        }
-
-        #logs {
-            margin-top: 20px;
-            padding: 15px;
-            background: #111;
-            color: #00ff88;
-            min-height: 300px;
-            white-space: pre-wrap;
-            border-radius: 6px;
-        }
-    </style>
+    <!-- Socket.io client from deployed backend -->
+    <script
+        src="https://live-ops-helpdesk-3an1.onrender.com/socket.io/socket.io.js"
+    ></script>
 </head>
 
 <body>
 
-    <h1>Live Ops Helpdesk Socket Test</h1>
+    <!-- ================= HEADER ================= -->
 
-    <p id="connectionStatus">
-        Connecting...
-    </p>
+    <header class="topbar">
 
-    <hr>
+        <div>
+            <h1>RapidDispatch Live Ops</h1>
+            <p>Real-Time Ticket Operations</p>
+        </div>
 
-    <h2>Agent</h2>
+        <div
+            id="connectionStatus"
+            class="connection offline"
+        >
+            <span class="status-dot"></span>
+            Connecting...
+        </div>
 
-    <button onclick="joinAsAgent('Agent A')">
-        Join as Agent A
-    </button>
+    </header>
 
-    <button onclick="joinAsAgent('Agent B')">
-        Join as Agent B
-    </button>
 
-    <hr>
+    <!-- ================= MAIN ================= -->
 
-    <h2>Ticket Lock Test</h2>
+    <main class="container">
 
-    <button onclick="lockTicket()">
-        Lock Ticket 105
-    </button>
+        <!-- ================= AGENT PANEL ================= -->
 
-    <button onclick="unlockTicket()">
-        Unlock Ticket 105
-    </button>
+        <section class="agent-panel">
 
-    <button onclick="disconnectSocket()">
-        Disconnect Socket
-    </button>
+            <div>
+                <span class="section-label">
+                    ACTIVE AGENT
+                </span>
 
-    <div id="logs"></div>
+                <h2 id="agentName">
+                    Not selected
+                </h2>
+            </div>
 
-    <script src="https://live-ops-helpdesk-3an1.onrender.com/socket.io/socket.io.js"></script>
+            <div class="agent-buttons">
 
-    <script>
-        console.log("===== SOCKET TEST STARTED =====");
+                <button
+                    id="agentAButton"
+                    class="agent-button"
+                    onclick="joinAsAgent('Agent A')"
+                >
+                    Agent A
+                </button>
 
-        const socket = io("https://live-ops-helpdesk-3an1.onrender.com/");
+                <button
+                    id="agentBButton"
+                    class="agent-button"
+                    onclick="joinAsAgent('Agent B')"
+                >
+                    Agent B
+                </button>
 
-        const connectionStatus =
-            document.getElementById("connectionStatus");
+            </div>
 
-        const logs =
-            document.getElementById("logs");
+        </section>
 
-        const TEST_TICKET_ID = "105";
 
+        <!-- ================= STATS ================= -->
 
-        // ==========================================
-        // HELPER
-        // ==========================================
+        <section class="stats-grid">
 
-        function log(message, data = null) {
+            <div class="stat-card">
+                <span>Total Tickets</span>
+                <strong id="totalTickets">0</strong>
+            </div>
 
-            console.log(message, data || "");
+            <div class="stat-card">
+                <span>Available</span>
+                <strong id="availableTickets">0</strong>
+            </div>
 
-            logs.textContent +=
-                message +
-                (data ? "\n" + JSON.stringify(data, null, 2) : "") +
-                "\n\n";
-        }
+            <div class="stat-card">
+                <span>Locked</span>
+                <strong id="lockedTickets">0</strong>
+            </div>
 
+            <div class="stat-card">
+                <span>Connection</span>
+                <strong id="connectionText">
+                    Offline
+                </strong>
+            </div>
 
-        // ==========================================
-        // CONNECTION
-        // ==========================================
+        </section>
 
-        socket.on("connect", () => {
 
-            log("✅ SOCKET CONNECTED");
+        <!-- ================= TICKETS ================= -->
 
-            log("Socket ID:", socket.id);
+        <section class="tickets-section">
 
-            connectionStatus.textContent =
-                `Connected: ${socket.id}`;
-        });
+            <div class="section-header">
 
+                <div>
+                    <span class="section-label">
+                        LIVE QUEUE
+                    </span>
 
-        socket.on("connect_error", (error) => {
+                    <h2>Support Tickets</h2>
+                </div>
 
-            log("❌ SOCKET CONNECTION ERROR");
+                <button
+                    class="refresh-button"
+                    onclick="loadTickets()"
+                >
+                    ↻ Refresh
+                </button>
 
-            log(error.message);
+            </div>
 
-            connectionStatus.textContent =
-                "Connection error";
-        });
 
+            <div
+                id="ticketContainer"
+                class="ticket-grid"
+            >
 
-        // ==========================================
-        // JOIN DASHBOARD
-        // ==========================================
+                <div class="empty-state">
+                    Loading tickets...
+                </div>
 
-        function joinAsAgent(agentName) {
+            </div>
 
-            log("🔵 JOIN DASHBOARD");
+        </section>
 
-            log("Agent:", agentName);
 
-            log("Socket connected:", socket.connected);
+        <!-- ================= ACTIVITY ================= -->
 
-            socket.emit(
-                "join_dashboard",
-                agentName
-            );
-        }
+        <section class="activity-section">
 
+            <div class="section-header">
 
-        socket.on("dashboard_joined", (data) => {
+                <div>
+                    <span class="section-label">
+                        REAL-TIME EVENTS
+                    </span>
 
-            log("✅ DASHBOARD JOINED");
+                    <h2>Activity</h2>
+                </div>
 
-            log("Server response:", data);
+                <button
+                    class="clear-button"
+                    onclick="clearLogs()"
+                >
+                    Clear
+                </button>
 
-            connectionStatus.textContent =
-                `${data.message} - ${data.agentName}`;
-        });
+            </div>
 
+            <div
+                id="activityLog"
+                class="activity-log"
+            >
 
-        // ==========================================
-        // LOCK TICKET
-        // ==========================================
+                <div class="log-item">
+                    <span class="log-time">
+                        --:--
+                    </span>
 
-        function lockTicket() {
+                    <span>
+                        Waiting for connection...
+                    </span>
+                </div>
 
-            log("🔒 LOCKING TICKET");
+            </div>
 
-            log("Ticket ID:", TEST_TICKET_ID);
+        </section>
 
-            socket.emit(
-                "lock_ticket",
-                TEST_TICKET_ID
-            );
-        }
+    </main>
 
 
-        socket.on("ticket_locked", (data) => {
-
-            log("🔒 TICKET LOCKED");
-
-            log("Lock data:", data);
-        });
-
-
-        socket.on("lock_failed", (data) => {
-
-            log("❌ LOCK FAILED");
-
-            log("Server response:", data);
-        });
-
-
-        // ==========================================
-        // UNLOCK TICKET
-        // ==========================================
-
-        function unlockTicket() {
-
-            log("🔓 UNLOCKING TICKET");
-
-            log("Ticket ID:", TEST_TICKET_ID);
-
-            socket.emit(
-                "unlock_ticket",
-                TEST_TICKET_ID
-            );
-        }
-
-
-        socket.on("ticket_unlocked", (data) => {
-
-            log("🔓 TICKET UNLOCKED");
-
-            log("Unlock data:", data);
-        });
-
-
-        socket.on("unlock_failed", (data) => {
-
-            log("❌ UNLOCK FAILED");
-
-            log("Server response:", data);
-        });
-
-
-        // ==========================================
-        // TICKET CREATED
-        // ==========================================
-
-        socket.on("ticket_created", (data) => {
-
-            log("🆕 TICKET CREATED");
-
-            log("New ticket:", data);
-        });
-
-
-        // ==========================================
-        // TICKET CLAIMED
-        // ==========================================
-
-        socket.on("ticket_claimed", (data) => {
-
-            log("📋 TICKET CLAIMED");
-
-            log("Claim data:", data);
-        });
-
-
-        // ==========================================
-        // DISCONNECT
-        // ==========================================
-
-        function disconnectSocket() {
-
-            log("⚠️ MANUALLY DISCONNECTING SOCKET");
-
-            socket.disconnect();
-        }
-
-
-        socket.on("disconnect", (reason) => {
-
-            log("❌ SOCKET DISCONNECTED");
-
-            log("Reason:", reason);
-
-            connectionStatus.textContent =
-                `Disconnected: ${reason}`;
-        });
-
-    </script>
+    <script src="app.js"></script>
 
 </body>
 </html>
