@@ -372,9 +372,9 @@ function renderTickets() {
 
         if (lock) {
 
-            const isOwner =
-                currentAgent ===
-                lock.agentName;
+           const isOwner =
+    currentAgent === lock.agentName &&
+    socket.id === lock.socketId;
 
             buttonHTML = `
                 <button
@@ -555,20 +555,39 @@ socket.on(
 function unlockTicket(ticketId) {
 
     if (!currentAgent) {
+        alert("Please select an agent first.");
+        return;
+    }
 
+    if (!socket.connected) {
+        alert("WebSocket is not connected.");
+        return;
+    }
+
+    const lock = lockedTickets.get(String(ticketId));
+
+    if (!lock) {
+        addLog(`Ticket #${ticketId} is not currently locked.`);
+        return;
+    }
+
+    const isOwner =
+        socket.id === lock.socketId &&
+        currentAgent === lock.agentName;
+
+    if (!isOwner) {
         alert(
-            "Please select an agent first."
+            `You cannot unlock this ticket. It is locked by ${lock.agentName}.`
+        );
+
+        addLog(
+            `❌ Unauthorized unlock attempt for #${ticketId} by ${currentAgent}`
         );
 
         return;
     }
 
-
-    socket.emit(
-        "unlock_ticket",
-        ticketId
-    );
-
+    socket.emit("unlock_ticket", ticketId);
 
     addLog(
         `${currentAgent} requested unlock for ticket #${ticketId}`
