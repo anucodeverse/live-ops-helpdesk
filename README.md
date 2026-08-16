@@ -365,14 +365,14 @@ This separation allows ticket locks to be checked quickly while keeping permanen
 ### Live Deployment
 
 ```text
-Frontend URL: <add deployed frontend URL>
+Frontend URL: https://live-ops-helpdesk-theta.vercel.app/
 Backend URL: https://live-ops-helpdesk-3an1.onrender.com
 ```
 
 ### GitHub
 
 ```text
-GitHub Repository: <add GitHub repository URL>
+GitHub Repository: https://github.com/anucodeverse/live-ops-helpdesk
 ```
 
 ### Demo Video
