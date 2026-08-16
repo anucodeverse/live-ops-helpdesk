@@ -115,6 +115,20 @@ socket.on("connect", () => {
     addLog(
         `Connected to server (${socket.id})`
     );
+
+    // Re-register the current agent after
+    // every Socket.IO connection/reconnection
+    if (currentAgent) {
+
+        socket.emit(
+            "join_dashboard",
+            currentAgent
+        );
+
+        addLog(
+            `${currentAgent} rejoined the dashboard`
+        );
+    }
 });
 
 
